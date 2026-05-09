@@ -41,7 +41,6 @@ pipeline {
                                     -Dsonar.projectKey=spring-boot-h2-database-crud \
                                     -Dsonar.projectName=spring-boot-h2-database-crud
                                 '''
-                            }
                         }
                     }
                 }
