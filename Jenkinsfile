@@ -43,8 +43,8 @@ pipeline {
                             sh """
                                 mvn sonar:sonar \
                                 -Dsonar.organization=dmtorrico \
-                                -Dsonar.projectKey=${env.REPO_NAME} \
-                                -Dsonar.projectName=${env.REPO_NAME} \
+                                -Dsonar.projectKey=dmtorrico_spring-boot-h2-database-crud \
+                                -Dsonar.projectName=spring-boot-h2-database-crud \
                                 -Dsonar.sources=src/main/java
                             """
                         }
