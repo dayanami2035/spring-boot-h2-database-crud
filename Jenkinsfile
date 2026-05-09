@@ -41,7 +41,7 @@ pipeline {
                     steps {
                         withSonarQubeEnv("${env.SONAR_SERVER}") {
                             sh """
-                                mvn sonar:sonar \
+                                mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
                                 -Dsonar.organization=dmtorrico \
                                 -Dsonar.projectKey=dmtorrico_spring-boot-h2-database-crud \
                                 -Dsonar.projectName=spring-boot-h2-database-crud \
