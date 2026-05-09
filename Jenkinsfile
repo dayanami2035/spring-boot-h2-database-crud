@@ -37,16 +37,16 @@ pipeline {
                     }
                 }
 
-                stage('SonarQube') {
-
+                stage('Análisis SonarQube') {
                     steps {
-
                         withSonarQubeEnv("${env.SONAR_SERVER}") {
                             sh """
                                 mvn sonar:sonar \
                                 -Dsonar.organization=dmtorrico \
                                 -Dsonar.projectKey=${env.REPO_NAME} \
                                 -Dsonar.projectName=${env.REPO_NAME} \
+                                -Dsonar.sources=src/main/java \
+                        
                             """
                         }
                     }
