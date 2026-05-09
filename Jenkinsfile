@@ -2,6 +2,13 @@ pipeline {
 
     agent any
 
+    environment {
+        SONAR_SERVER = 'sonarqube-server'
+        // EXTRAEMOS DINÁMICAMENTE EL NOMBRE DEL REPO
+        // Esto evita que tengas que cambiar el nombre manualmente en cada proyecto
+        REPO_NAME = "${env.GIT_URL.split('/').last().split('\\.').first()}"
+    }
+
     tools {
         maven 'maven-default'
     }
@@ -34,14 +41,13 @@ pipeline {
 
                     steps {
 
-                        withSonarQubeEnv('sonarqube-server') {
-
-                                sh '''
-                                    mvn sonar:sonar \
-                                    -Dsonar.organization=dmtorrico \
-                                    -Dsonar.projectKey=dmtorrico_spring-boot-h2-database-crud \
-                                    -Dsonar.projectName=dmtorrico_spring-boot-h2-database-crud
-                                '''
+                        withSonarQubeEnv("${env.SONAR_SERVER}") {
+                            sh """
+                                mvn sonar:sonar \
+                                -Dsonar.organization=dmtorrico \
+                                -Dsonar.projectKey=${env.REPO_NAME} \
+                                -Dsonar.projectName=${env.REPO_NAME} \
+                            """
                         }
                     }
                 }
