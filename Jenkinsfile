@@ -40,12 +40,9 @@ pipeline {
 
                     steps {
 
-                        withCredentials([
-                            string(credentialsId: 'sonar_token', variable: 'SONAR_TOKEN')
-                        ]) {
+                        withCredentials([string(credentialsId: 'sonarqube_token', variable: 'SONAR_TOKEN')]) {
 
                             withSonarQubeEnv("${env.SONAR_SERVER}") {
-
                                 sh """
                                     mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
                                     -Dsonar.organization=dmtorrico \
