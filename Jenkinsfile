@@ -39,8 +39,8 @@ pipeline {
                                 sh '''
                                     mvn sonar:sonar \
                                     -Dsonar.organization=dmtorrico \
-                                    -Dsonar.projectKey=spring-boot-h2-database-crud \
-                                    -Dsonar.projectName=spring-boot-h2-database-crud
+                                    -Dsonar.projectKey=dmtorrico_spring-boot-h2-database-crud \
+                                    -Dsonar.projectName=dmtorrico_spring-boot-h2-database-crud
                                 '''
                         }
                     }
