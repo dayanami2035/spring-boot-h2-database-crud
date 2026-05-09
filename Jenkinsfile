@@ -45,8 +45,7 @@ pipeline {
                                 -Dsonar.organization=dmtorrico \
                                 -Dsonar.projectKey=${env.REPO_NAME} \
                                 -Dsonar.projectName=${env.REPO_NAME} \
-                                -Dsonar.sources=src/main/java \
-                        
+                                -Dsonar.sources=src/main/java
                             """
                         }
                     }
