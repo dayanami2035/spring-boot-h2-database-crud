@@ -41,7 +41,7 @@ pipeline {
 
                     steps {
                         // 'sonarqube_token' debe ser el ID de tu credencial en Jenkins
-                        withCredentials([string(credentialsId: 'sonarqube_token', variable: 'SONAR_TOKEN')]) {
+                        withCredentials([string(credentialsId: 'sonar_token', variable: 'SONAR_TOKEN')]) {
 
                             withSonarQubeEnv("${env.SONAR_SERVER}") {
                                     sh """
