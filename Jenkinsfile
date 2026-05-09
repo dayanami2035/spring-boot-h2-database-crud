@@ -46,7 +46,6 @@ pipeline {
                                 -Dsonar.projectKey=dmtorrico_spring-boot-h2-database-crud \
                                 -Dsonar.projectName=spring-boot-h2-database-crud
                             """
-                        }
                     }
                 }
             }
