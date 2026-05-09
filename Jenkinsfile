@@ -1,15 +1,9 @@
 pipeline {
+
     agent any
 
     tools {
         maven 'maven-default'
-    }
-
-    environment {
-        SONAR_SERVER = 'sonarqube-server'
-        // EXTRAEMOS DINÁMICAMENTE EL NOMBRE DEL REPO
-        // Esto evita que tengas que cambiar el nombre manualmente en cada proyecto
-        REPO_NAME = "${env.GIT_URL.split('/').last().split('\\.').first()}"
     }
 
     stages {
@@ -26,7 +20,7 @@ pipeline {
             }
         }
 
-        stage('Parallel Build And Sonar') {
+        stage('Parallel') {
 
             parallel {
 
@@ -36,24 +30,30 @@ pipeline {
                     }
                 }
 
-                stage('SonarQube Analysis') {
+                stage('SonarQube') {
+
                     steps {
 
-                        withSonarQubeEnv("${env.SONAR_SERVER}") {
+                        withSonarQubeEnv('sonarqube-server') {
 
-                            sh """
-                                mvn sonar:sonar \
-                                -Dsonar.organization=dmtorrico \
-                                -Dsonar.projectKey=${env.REPO_NAME} \
-                                -Dsonar.projectName=${env.REPO_NAME}
-                            """
+                            withCredentials([
+                                string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')
+                            ]) {
+
+                                sh '''
+                                    mvn sonar:sonar \
+                                    -Dsonar.projectKey=spring-boot-h2-database-crud \
+                                    -Dsonar.projectName=spring-boot-h2-database-crud \
+                                    -Dsonar.token=$SONAR_TOKEN
+                                '''
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Archive JAR') {
+        stage('Archive') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar'
             }
@@ -69,10 +69,5 @@ pipeline {
         failure {
             echo 'Pipeline falló'
         }
-
-        always {
-            echo 'Fin de ejecución'
-        }
     }
 }
-
