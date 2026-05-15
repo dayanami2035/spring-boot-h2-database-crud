@@ -6,15 +6,13 @@ pipeline {
 
         SONAR_SERVER = 'sonarqube-server'
 
-        // Repo dinámico
+        // Nombre dinámico el proyecto
         REPO_NAME = "${env.GIT_URL.split('/').last().split('\\.').first()}"
 
-        // Google Artifact Registry
+        // Variables de entorno de Google Artifact Registry
         GCP_PROJECT = 'decisive-mapper-493716-p3'
         GAR_REGION  = 'us-central1'
         GAR_REPO    = 'repo-crud'
-
-        // Credencial GCP
         GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account-total')
 
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -25,19 +23,19 @@ pipeline {
     tools {
         maven 'maven-default'
     }
-    /*
+    
     triggers {
         githubPush()
     }
-    */
+    
     stages {
 
         /*
-        ============================================
-        VERIFY TOOLS
-        ============================================
+        ===================================================
+        Verificamos previamente las herramientas necesarias
+        ===================================================
         */
-        stage('Verify Tools') {
+        stage('Verificar Herramientas') {
             steps {
 
                 sh '''
@@ -52,11 +50,11 @@ pipeline {
         }
 
         /*
-        ============================================
-        GCP AUTH
-        ============================================
+        ======================================================
+        Realizamos la autenticación con Google Cloud
+        ======================================================
         */
-        stage('Authenticate GCP') {
+        stage('Autenticación con GCP') {
 
             steps {
 
@@ -82,18 +80,7 @@ pipeline {
 
         /*
         ============================================
-        GET SOURCE
-        ============================================
-        stage('Get Source') {
-            steps {
-                checkout scm
-            }
-        }
-        */
-
-        /*
-        ============================================
-        COMPILE
+        Compilamos el proyecto con maven
         ============================================
         */
         stage('Compile') {
@@ -104,7 +91,7 @@ pipeline {
 
         /*
         ============================================
-        TEST
+        Realizamos un test
         ============================================
         */
         stage('Test') {
@@ -115,29 +102,19 @@ pipeline {
 
         /*
         ============================================
-        BUILD + SONAR PARALLEL
+        Stage paralelo de BUILD + SONAR
         ============================================
         */
-        stage('Build & Sonar Parallel') {
+        stage('Build & Sonar en Paralelo') {
 
             parallel {
 
-                /*
-                ============================================
-                BUILD
-                ============================================
-                */
                 stage('Build') {
                     steps {
                         sh 'mvn package -DskipTests'
                     }
                 }
 
-                /*
-                ============================================
-                SONARQUBE
-                ============================================
-                */
                 stage('SonarQube Analysis') {
 
                     steps {
@@ -178,7 +155,7 @@ pipeline {
 
         /*
         ============================================
-        DOCKER BUILD
+        Construcción de la imagen docker
         ============================================
         */
         stage('Docker Build') {
@@ -196,7 +173,7 @@ pipeline {
 
         /*
         ============================================
-        PUSH TO GAR
+        Subir la imagen a Google Cloud 
         ============================================
         */
         stage('Push Docker Image') {
