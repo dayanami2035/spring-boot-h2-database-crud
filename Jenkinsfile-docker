@@ -12,7 +12,7 @@ pipeline {
         // Google Artifact Registry
         GCP_PROJECT = 'decisive-mapper-493716-p3'
         GAR_REGION  = 'us-central1'
-        GAR_REPO    = 'backend-repo'
+        GAR_REPO    = 'repo-crud'
 
         // Credencial GCP
         GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account-total')
