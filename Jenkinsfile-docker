@@ -1,0 +1,247 @@
+pipeline {
+
+    agent any
+
+    environment {
+
+        SONAR_SERVER = 'sonarqube-server'
+
+        // Repo dinámico
+        REPO_NAME = "${env.GIT_URL.split('/').last().split('\\.').first()}"
+
+        // Google Artifact Registry
+        GCP_PROJECT = 'decisive-mapper-493716-p3'
+        GAR_REGION  = 'us-central1'
+        GAR_REPO    = 'backend-repo'
+
+        // Credencial GCP
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account-total')
+
+        IMAGE_TAG = "${BUILD_NUMBER}"
+
+        DOCKER_IMAGE = "${GAR_REGION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}/${REPO_NAME}:${IMAGE_TAG}"
+    }
+
+    tools {
+        maven 'maven-default'
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    stages {
+
+        /*
+        ============================================
+        VERIFY TOOLS
+        ============================================
+        */
+        stage('Verify Tools') {
+            steps {
+
+                sh '''
+                    echo "Validando herramientas"
+
+                    java -version
+                    mvn -version
+                    docker --version
+                    gcloud --version
+                '''
+            }
+        }
+
+        /*
+        ============================================
+        GCP AUTH
+        ============================================
+        */
+        stage('Authenticate GCP') {
+
+            steps {
+
+                sh '''
+                    echo "Autenticando Service Account"
+
+                    gcloud auth activate-service-account \
+                        --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+
+                    gcloud config set project $GCP_PROJECT --quiet
+
+                    echo "Configurando Docker para GAR"
+
+                    gcloud auth configure-docker \
+                        ${GAR_REGION}-docker.pkg.dev --quiet
+
+                    gcloud auth list
+
+                    gcloud config list
+                '''
+            }
+        }
+
+        /*
+        ============================================
+        GET SOURCE
+        ============================================
+        */
+        stage('Get Source') {
+            steps {
+                checkout scm
+            }
+        }
+
+        /*
+        ============================================
+        COMPILE
+        ============================================
+        */
+        stage('Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+
+        /*
+        ============================================
+        TEST
+        ============================================
+        */
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        /*
+        ============================================
+        BUILD + SONAR PARALLEL
+        ============================================
+        */
+        stage('Build & Sonar Parallel') {
+
+            parallel {
+
+                /*
+                ============================================
+                BUILD
+                ============================================
+                */
+                stage('Build') {
+                    steps {
+                        sh 'mvn package -DskipTests'
+                    }
+                }
+
+                /*
+                ============================================
+                SONARQUBE
+                ============================================
+                */
+                stage('SonarQube Analysis') {
+
+                    steps {
+
+                        withCredentials([
+                            string(
+                                credentialsId: 'sonarqube_token',
+                                variable: 'SONAR_TOKEN'
+                            )
+                        ]) {
+
+                            withSonarQubeEnv("${env.SONAR_SERVER}") {
+
+                                sh """
+                                    mvn sonar:sonar \
+                                    -Dsonar.organization=dayanami2035 \
+                                    -Dsonar.projectKey=dayanami2035_spring-boot-h2-database-crud \
+                                    -Dsonar.projectName=${REPO_NAME} \
+                                    -Dsonar.token=${SONAR_TOKEN}
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================
+        ARCHIVE ARTIFACT
+        ============================================
+        */
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar'
+            }
+        }
+
+        /*
+        ============================================
+        DOCKER BUILD
+        ============================================
+        */
+        stage('Docker Build') {
+
+            steps {
+
+                sh """
+                    echo "Construyendo imagen Docker"
+
+                    docker build \
+                        -t ${DOCKER_IMAGE} .
+                """
+            }
+        }
+
+        /*
+        ============================================
+        PUSH TO GAR
+        ============================================
+        */
+        stage('Push Docker Image') {
+
+            steps {
+
+                sh """
+                    echo "Subiendo imagen a Artifact Registry"
+
+                    docker push ${DOCKER_IMAGE}
+                """
+            }
+        }
+
+        /*
+        ============================================
+        VERIFY IMAGE
+        ============================================
+        */
+        stage('Verify Image') {
+
+            steps {
+
+                sh """
+                    echo "Verificando imagen publicada"
+
+                    gcloud artifacts docker images list \
+                    ${GAR_REGION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}
+                """
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'Pipeline ejecutado correctamente'
+        }
+
+        failure {
+            echo 'Pipeline falló'
+        }
+
+        always {
+            cleanWs()
+        }
+    }
+}
